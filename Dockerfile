@@ -36,7 +36,7 @@ RUN dpkg --add-architecture i386 \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates curl gnupg unzip procps \
-        lib32gcc-s1 lib32stdc++6 libgnutls30 jq \
+        lib32gcc-s1 lib32stdc++6 libgnutls30 \
     && apt-get install -y --no-install-recommends xvfb xauth \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://dl.winehq.org/wine-builds/winehq.key \
@@ -71,10 +71,11 @@ RUN /opt/steamcmd/steamcmd.sh +quit || true \
 ENV SERVER_DIR=/data/server
 
 WORKDIR /data/server
+
 #HEALTHCHECK --start-period=5m \
 #    CMD pgrep "AbioticFactor" > /dev/null || exit 1
 
-VOLUME ["/data/server"]
+VOLUME ["/data/server", "/data/saves", "/data/config", "/data/logs", "/data/backups"]
 EXPOSE 7777/udp 27015/udp 27020/tcp
 
 ENTRYPOINT ["/usr/bin/bash", "--", "/home/steam/server/init.sh"]
