@@ -15,7 +15,6 @@ elif [[ "$UPDATE_ON_START" == "true" ]]; then
     REMOTE=$(remote_buildid)
     LogInfo "Installed build: $LOCAL / Available build: ${REMOTE:-unknown}"
     if [[ -n "$REMOTE" && "$REMOTE" != "$LOCAL" ]]; then
-        #backup_server
         update_server || LogError "Update failed - starting existing build $LOCAL"
     else
         LogInfo "Server is up to date"
