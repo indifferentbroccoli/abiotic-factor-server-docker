@@ -1,0 +1,11 @@
+services:
+  afactor:
+    build: .
+    container_name: abioticfactor
+    volumes:
+      - ./afactor:/data/server-data
+    ports:
+      - "7777:7777/udp"
+      - "27015:27015/udp"
+    stop_grace_period: 60s
+    restart: unless-stopped
