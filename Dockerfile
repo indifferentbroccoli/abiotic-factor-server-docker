@@ -1,22 +1,3 @@
-FROM golang:1.23.1-alpine AS rcon-cli_builder
-
-ARG RCON_VERSION="0.10.3"
-ARG RCON_TGZ_SHA1SUM=33ee8077e66bea6ee097db4d9c923b5ed390d583
-
-WORKDIR /build
-
-# install rcon
-SHELL ["/bin/ash", "-o", "pipefail", "-c"]
-
-ENV CGO_ENABLED=0
-RUN wget -q https://github.com/gorcon/rcon-cli/archive/refs/tags/v${RCON_VERSION}.tar.gz -O rcon.tar.gz \
-    && echo "${RCON_TGZ_SHA1SUM}" rcon.tar.gz | sha1sum -c - \
-    && tar -xzvf rcon.tar.gz \
-    && rm rcon.tar.gz \
-    && mv rcon-cli-${RCON_VERSION}/* ./ \
-    && rm -rf rcon-cli-${RCON_VERSION} \
-    && go build -v ./cmd/gorcon
-
 FROM debian:bookworm-slim
 
 LABEL maintainer="support@indifferentbroccoli.com" \
@@ -29,8 +10,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     WINEPREFIX=/home/steam/.wine \
     WINEDEBUG=-all \
     XDG_RUNTIME_DIR=/tmp/runtime-steam
-
-COPY --from=rcon-cli_builder /build/gorcon /usr/bin/rcon-cli
 
 RUN dpkg --add-architecture i386 \
     && apt-get update \
@@ -49,7 +28,7 @@ RUN dpkg --add-architecture i386 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash steam \
-    && mkdir -p /opt/steamcmd /data/server \
+    && mkdir -p /opt/steamcmd /data/server-data \
     && curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
         | tar -xz -C /opt/steamcmd \
     && chown -R steam:steam /opt/steamcmd /data
@@ -68,14 +47,14 @@ USER steam
 RUN /opt/steamcmd/steamcmd.sh +quit || true \
     && wineboot --init && wineserver -w
 
-ENV SERVER_DIR=/data/server
+ENV SERVER_DIR=/data/server-data
 
-WORKDIR /data/server
+WORKDIR /data/server-data
 
-#HEALTHCHECK --start-period=5m \
-#    CMD pgrep "AbioticFactor" > /dev/null || exit 1
+HEALTHCHECK --start-period=5m \
+   CMD pgrep "AbioticFactorServer-Win64-Shipping" > /dev/null || exit 1
 
-VOLUME ["/data/server", "/data/saves", "/data/config", "/data/logs", "/data/backups"]
-EXPOSE 7777/udp 27015/udp 27020/tcp
+VOLUME ["/data/server-data"]
+EXPOSE 7777/udp 27015/udp
 
 ENTRYPOINT ["/usr/bin/bash", "--", "/home/steam/server/init.sh"]
