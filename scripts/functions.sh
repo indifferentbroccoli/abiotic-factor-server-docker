@@ -1,29 +1,9 @@
 #!/bin/bash
 source "/home/steam/server/logging.sh"
 
-log_cycle() {
-  if [[ -f "$LOG_FILE" ]]; then
-    cp "$LOG_FILE" "$SAVES_DIR/logs/AbioticFactor-$(date +%Y%m%d-%H%M%S).log"
-    : > "$LOG_FILE"
-  fi
-}
-
-rcon-call() {
-  local args="$1"
-  rcon-cli -c /home/steam/server/rcon.yml "$args"
-}
+BACKUP_DIR=$SERVER_DIR/backup
 
 steamcmd() { /opt/steamcmd/steamcmd.sh "$@"; }
-
-link_dir() {
-  local real=$1 link=$2
-  mkdir -p "$real" "$(dirname "$link")"
-  if [[ -d "$link" && ! -L "$link" ]]; then
-    cp -rn "$link"/. "$real"/ 2>/dev/null || true
-    rm -rf "$link"
-  fi
-  ln -sfn "$real" "$link"
-}
 
 local_buildid() {
   grep -Po '"buildid"\s+"\K\d+' "$SERVER_DIR/steamapps/appmanifest_${APP_ID}.acf" 2>/dev/null || echo 0
@@ -61,16 +41,20 @@ update_server() {
 
 backup_server() {
   mkdir -p "$BACKUP_DIR"
+  if [[ ! -d "$SERVER_DIR/AbioticFactor/Saved/SaveGames/Server/Worlds/$WORLD_NAME" ]]; then
+    LogWarn "World '$WORLD_NAME' does not exist, skipping backup"
+    return 0
+  fi
   local name="$WORLD_NAME-$(date +%Y%m%d-%H%M%S).tar.gz"
   LogInfo "Backing up current server to $name"
-  tar -czf "$BACKUP_DIR/$name" -C "$SAVES_DIR" .
+  tar -czf "$BACKUP_DIR/$name" -C "$SERVER_DIR/AbioticFactor/Saved/SaveGames/Server/Worlds/$WORLD_NAME" .
   ls -1t "$BACKUP_DIR"/$WORLD_NAME-*.tar.gz 2>/dev/null \
     | tail -n +$((BACKUPS_TO_KEEP + 1)) | xargs -r rm -f
 }
 
 shutdown() {
-  LogInfo "Shutting server down in 1 minute, please wait for server to stop gracefully."
-  #rcon-call 'shutdown 1 "Shutting server down in 1 minute."'
+  LogInfo "Shutting server down, please wait for server to stop gracefully."
+  pkill -INT -f 'AbioticFactorServer-Win64-Shipping' || true
 
   for ((i = 0; i < $SHUTDOWN_TIMEOUT; i++)); do
     kill -0 "$SERVER_PID" 2>/dev/null || break
