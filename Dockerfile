@@ -1,60 +1,77 @@
-FROM debian:bookworm-slim
+FROM --platform=linux/amd64 debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN dpkg --add-architecture i386 \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+        unzip \
+        procps \
+        libicu72 \
+        xvfb \
+        xauth \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://dl.winehq.org/wine-builds/winehq.key \
+        | gpg --dearmor -o /etc/apt/keyrings/winehq.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/winehq.gpg] https://dl.winehq.org/wine-builds/debian/ bookworm main" \
+        > /etc/apt/sources.list.d/winehq.list \
+    && apt-get update && apt-get install -y --install-recommends winehq-stable \
+    && apt-get purge -y gnupg && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG DEPOT_DOWNLOADER_VERSION=3.4.0
+RUN curl -fsSL \
+    "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_${DEPOT_DOWNLOADER_VERSION}/DepotDownloader-linux-x64.zip" \
+    -o /tmp/dd.zip && \
+    mkdir -p /depotdownloader && \
+    unzip /tmp/dd.zip DepotDownloader -d /depotdownloader && \
+    chmod +x /depotdownloader/DepotDownloader && \
+    rm /tmp/dd.zip
+
+RUN useradd -m -u 1000 -s /bin/bash steam
 
 LABEL maintainer="support@indifferentbroccoli.com" \
       name="indifferentbroccoli/abiotic-factor-server-docker" \
       github="https://github.com/indifferentbroccoli/abiotic-factor-server-docker" \
       dockerhub="https://hub.docker.com/r/indifferentbroccoli/abiotic-factor-server-docker"
 
-ENV DEBIAN_FRONTEND=noninteractive \
+ENV HOME=/home/steam \
     WINEARCH=win64 \
     WINEPREFIX=/home/steam/.wine \
     WINEDEBUG=-all \
-    XDG_RUNTIME_DIR=/tmp/runtime-steam
+    XDG_RUNTIME_DIR=/tmp/runtime-steam \
+    SERVER_DIR=/data/server-files \
+    STEAM_BRANCH=public \
+    UPDATE_ON_START=true \
+    MAX_PLAYERS=6 \
+    SERVER_NAME="Indifferent Broccoli Abiotic Factor Server" \
+    WORLD_NAME=MyWorld \
+    BACKUPS_TO_KEEP=2 \
+    SHUTDOWN_TIMEOUT=60
 
-RUN dpkg --add-architecture i386 \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates curl gnupg unzip procps \
-        lib32gcc-s1 lib32stdc++6 libgnutls30 \
-    && apt-get install -y --no-install-recommends xvfb xauth \
-    && mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://dl.winehq.org/wine-builds/winehq.key \
-        | gpg --dearmor -o /etc/apt/keyrings/winehq.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/winehq.gpg] https://dl.winehq.org/wine-builds/debian/ bookworm main" \
-        > /etc/apt/sources.list.d/winehq.list \
-    && apt-get update \
-    && apt-get install -y --install-recommends winehq-stable \
-    && apt-get install -y cabextract winbind screen xvfb \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN useradd -m -s /bin/bash steam \
-    && mkdir -p /opt/steamcmd /data/server-data \
-    && curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
-        | tar -xz -C /opt/steamcmd \
-    && chown -R steam:steam /opt/steamcmd /data
-
-COPY --chown=steam:steam ./scripts /home/steam/server/
-RUN chmod +x /home/steam/server/*.sh
+COPY ./scripts /home/steam/server/
 
 COPY branding /branding
 
-RUN mkdir -p /tmp/runtime-steam \
-    && chown steam:steam /tmp/runtime-steam \
-    && chmod 700 /tmp/runtime-steam
+RUN mkdir -p /data/server-files /tmp/runtime-steam && \
+    chown steam:steam /data/server-files /tmp/runtime-steam && \
+    chmod 700 /tmp/runtime-steam && \
+    chmod +x /home/steam/server/*.sh
 
 USER steam
 
-RUN /opt/steamcmd/steamcmd.sh +quit || true \
-    && wineboot --init && wineserver -w
+RUN wineboot --init && wineserver -w
 
-ENV SERVER_DIR=/data/server-data
-
-WORKDIR /data/server-data
+WORKDIR /home/steam/server
 
 HEALTHCHECK --start-period=5m \
-   CMD pgrep "AbioticFactorServer-Win64-Shipping" > /dev/null || exit 1
+            CMD pgrep -f "AbioticFactorServer-Win64-Shipping" > /dev/null || exit 1
 
-VOLUME ["/data/server-data"]
+VOLUME ["/data/server-files"]
+
 EXPOSE 7777/udp 27015/udp
 
-ENTRYPOINT ["/usr/bin/bash", "--", "/home/steam/server/init.sh"]
+ENTRYPOINT ["/home/steam/server/init.sh"]

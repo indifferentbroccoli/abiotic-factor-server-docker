@@ -1,40 +1,33 @@
 #!/bin/bash
-source "/home/steam/server/logging.sh"
-source "/home/steam/server/functions.sh"
-set -euo pipefail
+source /home/steam/server/functions.sh
 
-SERVER_PID=""
-TAIL_PID=""
+cd "$SERVER_DIR" || exit 1
 
-trap shutdown SIGTERM SIGINT
+args=(
+  -log
+  -newconsole
+  -useperfthreads
+  -NoAsyncLoadingThread
+  -tcp
+  -PORT=7777
+  -QUERYPORT=27015
+  -MaxServerPlayers="$MAX_PLAYERS"
+  -SteamServerName="$SERVER_NAME"
+  -WorldSaveName="$WORLD_NAME"
+)
 
-backup_server
-
-launch=(wine $SERVER_DIR/AbioticFactorServer.exe
-    -log -newconsole -useperfthreads -NoAsyncLoadingThread
-    -MaxServerPlayers=$MAX_PLAYERS -PORT=7777 -QUERYPORT=27015
-    -tcp -ServerPassword=$SERVER_PASSWORD -SteamServerName=$SERVER_NAME
-    -WorldSaveName=$WORLD_NAME)
-
-[[ -n "${MODS:-}" ]]        && launch+=("-Mods=${MODS}")
-[[ -n "${MODIO_TOKEN:-}" ]] && launch+=("-ModioToken=${MODIO_TOKEN}")
-
-if command -v xvfb-run >/dev/null 2>&1; then
-  launch=(xvfb-run --auto-servernum "${launch[@]}")
-else
-  LogInfo "Xvfb not installed, launching without a virtual display"
+if [ -n "$MODS" ]; then
+  args+=(-Mods="$MODS")
 fi
 
-LogInfo "Starting: ${launch[*]}"
-cd "$SERVER_DIR"
-"${launch[@]}" 2>&1 &
-SERVER_PID=$!
+LogAction "Starting server"
+LogInfo "Arguments: ${args[*]}"
 
-set +e
-wait "$SERVER_PID"
-status=$?
-set -e
+if [ -n "$SERVER_PASSWORD" ]; then
+  args+=(-ServerPassword="$SERVER_PASSWORD")
+fi
+if [ -n "$MODIO_TOKEN" ]; then
+  args+=(-ModioToken="$MODIO_TOKEN")
+fi
 
-LogInfo "Server exited with status $status"
-kill "$TAIL_PID" 2>/dev/null || true
-exit "$status"
+exec xvfb-run --auto-servernum wine AbioticFactorServer.exe "${args[@]}"

@@ -2,8 +2,10 @@ services:
   afactor:
     build: .
     container_name: abioticfactor
+    env_file:
+      - .env
     volumes:
-      - ./afactor:/data/server-data
+      - ./server-files:/data/server-files
     ports:
       - "7777:7777/udp"
       - "27015:27015/udp"
