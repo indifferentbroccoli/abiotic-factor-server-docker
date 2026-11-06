@@ -28,10 +28,6 @@ backup_world
 stop_server() {
   LogWarn "Stopping server"
   pkill -INT -f AbioticFactorServer-Win64-Shipping
-  if ! timeout "$SHUTDOWN_TIMEOUT" tail --pid="$server_pid" -f /dev/null; then
-    LogWarn "Server did not stop within ${SHUTDOWN_TIMEOUT}s, killing it"
-    wineserver -k
-  fi
   wait "$server_pid"
 }
 trap stop_server SIGTERM

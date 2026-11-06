@@ -44,7 +44,7 @@ services:
     image: indifferentbroccoli/abiotic-factor-server-docker
     restart: unless-stopped
     container_name: abioticfactor
-    stop_grace_period: 60s
+    stop_grace_period: 30s
     ports:
       - 7777:7777/udp
       - 27015:27015/udp
@@ -66,7 +66,7 @@ docker compose up -d
 docker run -d \
     --restart unless-stopped \
     --name abioticfactor \
-    --stop-timeout 60 \
+    --stop-timeout 30 \
     -p 7777:7777/udp \
     -p 27015:27015/udp \
     --env-file .env \

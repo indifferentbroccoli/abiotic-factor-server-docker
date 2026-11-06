@@ -48,8 +48,7 @@ ENV HOME=/home/steam \
     MAX_PLAYERS=6 \
     SERVER_NAME="Indifferent Broccoli Abiotic Factor Server" \
     WORLD_NAME=MyWorld \
-    BACKUPS_TO_KEEP=2 \
-    SHUTDOWN_TIMEOUT=60
+    BACKUPS_TO_KEEP=2
 
 COPY ./scripts /home/steam/server/
 
