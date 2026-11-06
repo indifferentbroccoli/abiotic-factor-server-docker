@@ -91,10 +91,6 @@ Forward the following ports to your server:
 * `7777/udp` - Game port
 * `27015/udp` - Query port
 
-## Volumes
-
-* `/data/server-files` - Server installation files, world saves (`AbioticFactor/Saved/SaveGames/Server/Worlds`) and backups (`backup/`)
-
 ## Support
 
 For issues and questions:
