@@ -20,6 +20,12 @@ if [ -n "$MODS" ]; then
   args+=(-Mods="$MODS")
 fi
 
+if [ -n "$MODIO_TOKEN" ]; then
+  mkdir -p "$SERVER_DIR/AbioticFactor/Saved/mod.io"
+  ln -sfn "$SERVER_DIR/AbioticFactor/Saved/mod.io" "$WINEPREFIX/drive_c/modio"
+  args+=(-ModsDir="C:/modio")
+fi
+
 LogAction "Starting server"
 LogInfo "Arguments: ${args[*]}"
 
