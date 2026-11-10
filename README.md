@@ -80,7 +80,10 @@ docker run -d \
 |-------------------|--------------------------------------------|-------------------------------------------------------------------------------|
 | SERVER_NAME       | Indifferent Broccoli Abiotic Factor Server | Name shown in the server browser                                              |
 | SERVER_PASSWORD   |                                            | Password required to join. Leave empty for no password                        |
+| ADMIN_PASSWORD    |                                            | Password for in-game admin. Leave empty to disable                            |
 | MAX_PLAYERS       | 6                                          | Maximum number of players                                                     |
+| GAME_PORT         | 7777                                       | Game port. Must match the published host port                                 |
+| QUERY_PORT        | 27015                                      | Query port. Must match the published host port                                |
 | WORLD_NAME        | MyWorld                                    | Name of the world save folder                                                 |
 | UPDATE_ON_START   | true                                       | Download and validate server files on every startup. Set to `false` to skip  |
 | STEAM_BRANCH      | public                                     | Steam branch to install                                                       |
@@ -94,6 +97,10 @@ Forward the following ports to your server:
 
 * `7777/udp` - Game port
 * `27015/udp` - Query port
+
+> [!NOTE]
+> The server advertises its own ports to Steam, so to use different ports change `GAME_PORT`/`QUERY_PORT`
+> and publish them on the same host port, e.g. `7780:7780/udp`. Mapping `7780:7777/udp` will not work.
 
 ## Support
 

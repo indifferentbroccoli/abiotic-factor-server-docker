@@ -9,8 +9,8 @@ args=(
   -useperfthreads
   -NoAsyncLoadingThread
   -tcp
-  -PORT=7777
-  -QUERYPORT=27015
+  -PORT="$GAME_PORT"
+  -QUERYPORT="$QUERY_PORT"
   -MaxServerPlayers="$MAX_PLAYERS"
   -SteamServerName="$SERVER_NAME"
   -WorldSaveName="$WORLD_NAME"
@@ -25,6 +25,9 @@ LogInfo "Arguments: ${args[*]}"
 
 if [ -n "$SERVER_PASSWORD" ]; then
   args+=(-ServerPassword="$SERVER_PASSWORD")
+fi
+if [ -n "$ADMIN_PASSWORD" ]; then
+  args+=(-AdminPassword="$ADMIN_PASSWORD")
 fi
 if [ -n "$MODIO_TOKEN" ]; then
   args+=(-ModioToken="$MODIO_TOKEN")
